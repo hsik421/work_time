@@ -11,6 +11,8 @@
 - CSV 하나에 모든 연도·월을 저장한다. 파일에는 탭이 없으며 앱에서 날짜 열을 기준으로 월별 표시한다.
 
 ## 문서
+코드는 기능별로 분리한다. `lib/app`은 앱 초기화·테마·기능 연결, `lib/features/startup`은 인트로, `attendance`는 달력·날짜 목록·편집·월 합계, `csv`는 파일 처리·관리 패널, `settings`는 기준시간 설정을 담당한다. `lib/domain`은 순수 계산, `lib/data`는 저장소 구현, `lib/shared`는 공통 오류·색상을 보관한다. 달력과 목록은 같은 근무 ViewModel을 사용한다.
+
 - [개발 지침](AGENTS.md)
 - [요구사항](docs/REQUIREMENTS.md)
 - [MVVM 설계](docs/ARCHITECTURE.md)

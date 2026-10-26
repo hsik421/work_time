@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:work_time/data/settings_store.dart';
 import 'package:work_time/domain/work_entry.dart';
-import 'package:work_time/features/view_models.dart';
-import 'package:work_time/main.dart';
-import 'package:work_time/ui/screens.dart';
+import 'package:work_time/app/app_view_model.dart';
+import 'package:work_time/features/attendance/view_models/work_time_view_model.dart';
+
+import 'package:work_time/app/app.dart';
+import 'package:work_time/features/attendance/views/work_main_screen.dart';
+import 'package:work_time/shared/presentation/work_colors.dart';
 
 import 'fakes.dart';
 

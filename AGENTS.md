@@ -16,6 +16,7 @@
 
 ## 구현 경계
 - Flutter/Dart 프로젝트를 유지한다. 구조는 docs/ARCHITECTURE.md를 따른다.
+- 화면과 상태관리는 lib/features의 startup/attendance/csv/settings별로 분리한다. lib/app은 초기화·테마·기능 연결, lib/shared는 공통 표현을 담당한다. 기능을 하나의 screens.dart 또는 view_models.dart에 다시 모으지 않는다.
 - 시간 계산은 UI 및 저장소와 분리한 순수 Dart 로직으로 작성한다.
 - 계산 단위는 정수 분이다. 계산 규칙은 docs/REQUIREMENTS.md만을 기준으로 삼는다.
 - 의존성 추가 시 목적과 선택 이유를 기록한다. 불필요한 상태관리·서버 계층을 추가하지 않는다.
