@@ -23,6 +23,12 @@
 - [결정 기록](docs/DECISIONS.md)
 
 ## 실행
+웹 앱: https://hsik421.github.io/work_time/
+
+`main` 브랜치에 푸시하면 GitHub Actions가 Flutter 3.47.5로 정적 분석·테스트·Web 빌드 후 GitHub Pages에 배포한다. Actions의 `Deploy Flutter Web to Pages`에서 수동 실행과 배포 결과를 확인할 수 있다. 저장소 Settings → Pages의 배포 소스는 GitHub Actions를 사용한다.
+
+배포 경로는 `/work_time/`이다. 로컬에서도 같은 배포 빌드를 확인하려면 `flutter build web --release --base-href /work_time/`을 사용한다. 기기 보관 데이터는 브라우저·사이트별로 분리되므로 로컬 개발 주소의 기록은 CSV로 저장한 뒤 배포 사이트에서 불러온다.
+
 - `flutter pub get`
 - `flutter run -d chrome --web-port 8085`
 - `flutter analyze`
