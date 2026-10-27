@@ -7,6 +7,7 @@ import 'package:work_time/shared/presentation/work_colors.dart';
 import 'calendar_panel.dart';
 import 'day_list_panel.dart';
 import '../widgets/entry_editor.dart';
+import '../widgets/save_success_overlay.dart';
 import '../widgets/month_summary_panel.dart';
 import '../../csv/csv_panel.dart';
 import '../../csv/csv_import_dialog.dart';
@@ -21,6 +22,18 @@ class WorkMainScreen extends StatefulWidget {
 }
 
 class _WorkMainScreenState extends State<WorkMainScreen> {
+  bool _imagesPrecached = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_imagesPrecached) {
+      _imagesPrecached = true;
+      for (final asset in saveSuccessImages) {
+        precacheImage(AssetImage(asset), context);
+      }
+    }
+  }
+
   WorkTimeViewModel get vm => widget.model;
   Future<bool> guard() async {
     if (vm.saving || widget.app.busy) return false;

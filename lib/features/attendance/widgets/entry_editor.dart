@@ -3,9 +3,12 @@ import 'package:work_time/domain/work_entry.dart';
 import 'package:work_time/features/attendance/view_models/work_time_view_model.dart';
 import 'package:work_time/shared/presentation/work_colors.dart';
 
+import 'save_success_overlay.dart';
+
 class EntryEditor extends StatelessWidget {
-  const EntryEditor({super.key, required this.model});
+  const EntryEditor({super.key, required this.model, this.inlineTime = false});
   final WorkTimeViewModel model;
+  final bool inlineTime;
   Future<void> pickTime(BuildContext context, bool clockIn) async {
     final draft = model.draft!;
     final old = clockIn ? draft.clockIn : draft.clockOut;
@@ -55,28 +58,56 @@ class EntryEditor extends StatelessWidget {
           '${dateKey(draft.date)} · 기준 ${durationText(draft.standardMinutes)}',
         ),
         const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            OutlinedButton(
-              onPressed: enabled ? () => pickTime(context, true) : null,
-              child: Text('출근 ${timeText(draft.clockIn)}'),
-            ),
-            OutlinedButton(
-              onPressed: enabled ? () => pickTime(context, false) : null,
-              child: Text('퇴근 ${timeText(draft.clockOut)}'),
-            ),
-            TextButton(
-              onPressed: enabled
-                  ? () => model.updateDraft(
-                      draft.copyWith(clearIn: true, clearOut: true),
-                    )
-                  : null,
-              child: const Text('출퇴근 비우기'),
-            ),
-          ],
-        ),
+        if (inlineTime)
+          Wrap(
+            spacing: 8,
+            runSpacing: 12,
+            children: [
+              for (final clockIn in [true, false])
+                SizedBox(
+                  width: 200,
+                  child: TextFormField(
+                    key: ValueKey('inline-${dateKey(draft.date)}-$clockIn'),
+                    initialValue:
+                        (clockIn ? draft.clockIn : draft.clockOut) == null
+                        ? ''
+                        : timeText(clockIn ? draft.clockIn : draft.clockOut),
+                    enabled: enabled,
+                    keyboardType: TextInputType.datetime,
+                    decoration: InputDecoration(
+                      labelText: clockIn ? '출근' : '퇴근',
+                      hintText: clockIn ? '09:00' : '18:00',
+                      helperText: '24시간제 HH:mm',
+                      errorText: model.timeInputError(clockIn),
+                    ),
+                    onChanged: (text) => model.updateTimeInput(clockIn, text),
+                  ),
+                ),
+            ],
+          ),
+        if (!inlineTime)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton(
+                onPressed: enabled ? () => pickTime(context, true) : null,
+                child: Text('출근 ${timeText(draft.clockIn)}'),
+              ),
+              OutlinedButton(
+                onPressed: enabled ? () => pickTime(context, false) : null,
+                child: Text('퇴근 ${timeText(draft.clockOut)}'),
+              ),
+              TextButton(
+                onPressed: enabled
+                    ? () => model.updateDraft(
+                        draft.copyWith(clearIn: true, clearOut: true),
+                      )
+                    : null,
+                child: const Text('출퇴근 비우기'),
+              ),
+            ],
+          ),
         if (draft.clockOut != null)
           TextButton.icon(
             onPressed: enabled
@@ -146,7 +177,9 @@ class EntryEditor extends StatelessWidget {
           ),
         const SizedBox(height: 12),
         Text(draft.clockIn == null ? '휴가만 기록하면 휴게 공제 없음' : '휴게시간 01:00 고정 공제'),
-        if (!draft.isEmpty && draft.validate() == null)
+        if (!model.hasTimeInputErrors &&
+            !draft.isEmpty &&
+            draft.validate() == null)
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
@@ -173,7 +206,21 @@ class EntryEditor extends StatelessWidget {
           runSpacing: 8,
           children: [
             FilledButton.icon(
-              onPressed: enabled ? model.save : null,
+              onPressed: enabled
+                  ? () async {
+                      final overlay = Overlay.of(context, rootOverlay: true);
+                      final reduceMotion = MediaQuery.disableAnimationsOf(
+                        context,
+                      );
+                      final saved = await model.save();
+                      if (saved && inlineTime && overlay.mounted) {
+                        showSaveSuccessOverlay(
+                          overlay,
+                          reduceMotion: reduceMotion,
+                        );
+                      }
+                    }
+                  : null,
               icon: const Icon(Icons.check),
               label: Text(model.saving ? '저장 중…' : '저장'),
             ),

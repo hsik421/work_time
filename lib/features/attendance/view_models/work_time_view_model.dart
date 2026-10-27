@@ -27,6 +27,34 @@ class WorkTimeViewModel extends ChangeNotifier {
   Map<String, WorkEntry> _records = {};
   bool loading = false, saving = false, loaded = true;
   String error = '', editError = '';
+  final Map<bool, String> _timeInputErrors = {};
+  bool get hasTimeInputErrors => _timeInputErrors.isNotEmpty;
+  String? timeInputError(bool clockIn) => _timeInputErrors[clockIn];
+
+  void updateTimeInput(bool clockIn, String text) {
+    if (!canEdit || draft == null) return;
+    final match = RegExp(r'^(\d{1,2}):(\d{2})$').firstMatch(text.trim());
+    final hour = match == null ? null : int.tryParse(match[1]!);
+    final minute = match == null ? null : int.tryParse(match[2]!);
+    if (text.trim().isNotEmpty &&
+        (hour == null || minute == null || hour > 23 || minute > 59)) {
+      _timeInputErrors[clockIn] = '00:00~23:59 형식으로 입력하세요.';
+      editError = '';
+      _emit();
+      return;
+    }
+    _timeInputErrors.remove(clockIn);
+    final base = clockIn ? draft!.date : draft!.clockOut ?? draft!.date;
+    final value = text.trim().isEmpty
+        ? null
+        : DateTime(base.year, base.month, base.day, hour!, minute!);
+    updateDraft(
+      clockIn
+          ? draft!.copyWith(clockIn: value, clearIn: value == null)
+          : draft!.copyWith(clockOut: value, clearOut: value == null),
+    );
+  }
+
   int _generation = 0;
   bool _disposed = false;
   List<DateTime> get dates => monthDates(month);
@@ -40,16 +68,17 @@ class WorkTimeViewModel extends ChangeNotifier {
   }
 
   bool get dirty =>
+      hasTimeInputErrors ||
       draft != null &&
-      jsonEncode(draft!.toRow()) !=
-          jsonEncode(
-            (entry(draft!.date) ??
-                    WorkEntry(
-                      date: draft!.date,
-                      standardMinutes: settings.standardMinutes,
-                    ))
-                .toRow(),
-          );
+          jsonEncode(draft!.toRow()) !=
+              jsonEncode(
+                (entry(draft!.date) ??
+                        WorkEntry(
+                          date: draft!.date,
+                          standardMinutes: settings.standardMinutes,
+                        ))
+                    .toRow(),
+              );
   void _emit() {
     if (!_disposed) notifyListeners();
   }
@@ -85,6 +114,7 @@ class WorkTimeViewModel extends ChangeNotifier {
   void select(DateTime date) {
     if (!canEdit || dirty) return;
     selectedDate = date;
+    _timeInputErrors.clear();
     draft =
         entry(date) ??
         WorkEntry(date: date, standardMinutes: settings.standardMinutes);
@@ -102,6 +132,7 @@ class WorkTimeViewModel extends ChangeNotifier {
   void discard() {
     if (saving) return;
     draft = null;
+    _timeInputErrors.clear();
     editError = '';
     _emit();
   }
@@ -109,6 +140,11 @@ class WorkTimeViewModel extends ChangeNotifier {
   Future<bool> save() async {
     final value = draft;
     if (value == null || !canEdit) return false;
+    if (hasTimeInputErrors) {
+      editError = '출퇴근 시간 형식을 확인하세요.';
+      _emit();
+      return false;
+    }
     editError = value.validate() ?? '';
     if (editError.isNotEmpty) {
       _emit();
@@ -150,6 +186,7 @@ class WorkTimeViewModel extends ChangeNotifier {
       if (_disposed) return false;
       _records = {for (final e in records) dateKey(e.date): e};
       draft = null;
+      _timeInputErrors.clear();
       return true;
     } catch (e) {
       editError = errorMessage(e);
